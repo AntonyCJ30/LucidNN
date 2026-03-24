@@ -138,18 +138,49 @@ def _parse_lucidnn_json(file_bytes):
 
 def get_lucidnn_export_json(topology, network_data, activ_func, import_source):
     import json as _json
+    import numpy as np
+
+    full_network_data = {}
+
+    # Loop through ALL layers except input layer
+    for l in range(1, len(topology)):
+        prev_layer_size = topology[l-1]
+        curr_layer_size = topology[l]
+
+        for n in range(curr_layer_size):
+            key = f"L{l}_N{n}"
+
+            # If neuron exists → use it
+            if key in network_data:
+                weights = list(network_data[key]["weights"])
+                bias = float(network_data[key]["bias"])
+
+                # Fix mismatch (important!)
+                if len(weights) != prev_layer_size:
+                    weights = [np.random.uniform(-1, 1) for _ in range(prev_layer_size)]
+
+            else:
+                # If missing → initialize properly
+                weights = [np.random.uniform(-1, 1) for _ in range(prev_layer_size)]
+                bias = float(np.random.uniform(-0.5, 0.5))
+
+            full_network_data[key] = {
+                "weights": weights,
+                "bias": bias
+            }
+
     export = {
         "type": "LUCIDNN_EXPORT",
         "topology": topology,
-        "network_data": {
-            k: {"weights": list(v["weights"]), "bias": float(v["bias"])}
-            for k, v in network_data.items()
-        },
+        "network_data": full_network_data,
         "metadata": {
             "activation": activ_func,
-            "source": import_source or "manual"
+            "source": import_source or "manual",
+            "total_layers": len(topology),
+            "neurons_per_layer": topology
         }
     }
+
     return _json.dumps(export, indent=2)
 
 

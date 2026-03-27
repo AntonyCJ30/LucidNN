@@ -27,6 +27,7 @@ double Activation::activate(double x, ActivationType type) {
     }
 }
 
+
 // --- BACKWARD PASS MATH (DERIVATIVES) ---
 double Activation::derivative(double x, ActivationType type) {
     switch (type) {
